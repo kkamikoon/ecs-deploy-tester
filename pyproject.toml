@@ -2,7 +2,7 @@
 name = "ecs-deploy-tester"
 version = "0.1.0"
 description = ""
-authors = ["황정식 <rootsik1221@evmodu.kr>"]
+authors = ["kkamikoon <rootsik1221@gmail.com>"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
