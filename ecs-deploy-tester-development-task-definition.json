@@ -1,0 +1,35 @@
+{
+    "containerDefinitions": [
+        {
+            "name": "ecs-deploy-tester-container",
+            "image": "[AWS ACCOUNT NUMBERS].dkr.ecr.ap-northeast-2.amazonaws.com/ecs-deploy-tester-development-repo",
+            "cpu": 512,
+            "memory": 1024,
+            "portMappings": [
+                {
+                    "containerPort": 8080,
+                    "hostPort": 8080,
+                    "protocol": "tcp"
+                }
+            ],
+            "essential": true,
+            "logConfiguration": {
+                "logDriver": "awslogs",
+                "options": {
+                    "awslogs-group": "/ecs/ecs-deploy-tester",
+                    "awslogs-region": "ap-northeast-2",
+                    "awslogs-stream-prefix": "development"
+                }
+            }
+        }
+    ],
+    "family": "ecs-deploy-tester-development",
+    "taskRoleArn": "arn:aws:iam::[AWS ACCOUNT NUMBERS]:role/ecsTaskExecutionRole",
+    "executionRoleArn": "arn:aws:iam::[AWS ACCOUNT NUMBERS]:role/ecsTaskExecutionRole",
+    "networkMode": "awsvpc",
+    "requiresCompatibilities": [
+        "FARGATE"
+    ],
+    "cpu": "512",
+    "memory": "1024"
+}

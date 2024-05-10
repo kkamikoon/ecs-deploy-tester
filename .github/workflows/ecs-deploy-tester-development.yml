@@ -1,0 +1,76 @@
+on:
+  push:
+    branches: [ development ]
+
+name: 🚀 Deploy development http server
+
+jobs:
+  build:
+    environment: development
+    name: Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Create Secret JSON
+        id: create-secrets-json
+        uses: jsdaniell/create-json@1.1.2
+        with:
+          name: "settings/secrets.json"
+          json: ${{ secrets.DEVELOPMENT_SECRET_JSON }}
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v1
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        uses: docker/build-push-action@v5
+        env:
+          ECR_REGISTRY: [AWS ACCOUNT NUMBERS].dkr.ecr.ap-northeast-2.amazonaws.com
+          ECR_REPOSITORY: ecs-deploy-tester-development-repo
+          IMAGE_TAG: latest
+        with:
+          file: Dockerfile-development
+          context: .
+          push: true
+          tags: ${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build Image Path
+        id: image-path
+        env:
+          ECR_REGISTRY: [AWS ACCOUNT NUMBERS].dkr.ecr.ap-northeast-2.amazonaws.com
+          ECR_REPOSITORY: ecs-deploy-tester-development-repo
+          IMAGE_TAG: latest
+        run: |
+          echo "ecs-deploy-tester-image=${{ env.ECR_REGISTRY }}/${{ env.ECR_REPOSITORY }}:${{ env.IMAGE_TAG }}" >> $GITHUB_OUTPUT
+
+      - name: Create ECS task definition
+        id: ecs-deploy-tester-task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: ecs-deploy-tester-development-task-definition.json
+          container-name: ecs-deploy-tester-container
+          image: ${{ steps.image-path.outputs.ecs-deploy-tester-image }}
+
+      - name: Deploy ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v1
+        with:
+          task-definition: ${{ steps.ecs-deploy-tester-task-def.outputs.task-definition }}
+          cluster: ecs-deploy-tester-development-cluster
+          service: ecs-deploy-tester-development-service
+          wait-for-service-stability: true

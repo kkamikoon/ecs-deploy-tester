@@ -1,0 +1,27 @@
+FROM python:3.11.5-slim-bookworm
+
+ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV TZ Asia/Seoul
+
+# UPDATE OS libraries
+RUN apt-get clean && apt-get update -y
+RUN apt-get install -y python3-dev build-essential
+
+# Create working directory
+RUN mkdir /app
+WORKDIR /app
+
+# Copy all files
+COPY . .
+
+# Install Virtual environment settings.
+RUN pip install --upgrade pip
+RUN pip install poetry
+RUN poetry install
+
+# Interface binaries in project.
+RUN chmod +x bin/run.sh
+
+# RUN backend
+CMD ["sh", "-c", "bin/run.sh"]
